@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
+axios.defaults.withCredentials = true;
+
 export default function App(){
   const [areas, setAreas] = useState<any[]>([]);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [userId, setUserId] = useState<number | null>(null);
 
-  useEffect(()=>{ fetchAreas(); },[]);
+  useEffect(()=>{ if(userRole) fetchAreas(); },[userRole]);
 
   async function fetchAreas(){
     const res = await axios.get('/api/areas');
@@ -18,11 +21,14 @@ export default function App(){
     e.preventDefault();
     const res = await axios.post('/api/auth/login', { username, password });
     setUserRole(res.data.role);
+    setUserId(res.data.userId);
   }
 
   async function book(areaId:string){
-    await axios.post('/api/bookings', { userId: 1, areaId });
+    if (!userId) return alert('login required');
+    await axios.post('/api/bookings', { areaId });
     alert('Prenotazione effettuata');
+    fetchAreas();
   }
 
   return (
@@ -39,7 +45,7 @@ export default function App(){
       <h2>Are di parcheggio</h2>
       <ul>
         {areas.map(a=> (
-          <li key={a.id}>{a.name} - posti: {a.capacity} <button onClick={()=>book(a.id)}>Prenota 1h</button></li>
+          <li key={a.id}>{a.name} - posti disponibili: {a.available} <button onClick={()=>book(a.id)}>Prenota 1h</button></li>
         ))}
       </ul>
     </div>
